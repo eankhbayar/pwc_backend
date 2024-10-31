@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  pwc_backend
+
+Globals:
+  Function:
+    Timeout: 3
+    Runtime: python3.12
+    Handler: index.handler
+    Architectures:
+      - x86_64
+    MemorySize: 128
+    Tracing: Active
+    Environment:
+      Variables:
+        TABLE_NAME: pwc-dynamodb-table
+
+Resources:
+  pwcBackendApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: pwcBackendApi
+      StageName: prod
+      Description: Backend for the PWC hackathon
+      Cors:
+        AllowMethods: "'GET','POST','DELETE'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+
+  UserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/user/
+      Role: arn:aws:iam::034362054428:role/backend
+      Events:
+        getUserEvent:
+          Type: Api
+          Properties:
+            Path: /user
+            Method: GET
+            RestApiId:
+              Ref: pwcBackendApi
+        editUserEvent:
+          Type: Api
+          Properties:
+            Path: /user
+            Method: POST
+            RestApiId:
+              Ref: pwcBackendApi
+  
+  UploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/upload/
+      Role: arn:aws:iam::034362054428:role/backend
+      Events:
+        uploadEvent:
+          Type: Api
+          Properties:
+            Path: /upload
+            Method: POST
+            RestApiId:
+              Ref: pwcBackendApi
+Outputs:
+  RestApiUrl:
+    Description: API Gateway endpoint URL for Prod stage
+    Value: !Sub "https://${pwcBackendApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"
